@@ -1,0 +1,100 @@
+{% extends "djsocketio/base.html" %}
+
+{% block extrahead %}
+    <link href="/static/css/style.css" rel="stylesheet">
+    <script type="text/javascript" src="/static/jquery-1.6.1.min.js"></script>
+    <script type="text/javascript" src="/static/socket.io.js"></script>
+    <script>    
+    WEB_SOCKET_SWF_LOCATION = "/static/WebSocketMain.swf";
+    WEB_SOCKET_DEBUG = true;
+
+    // socket.io specific code
+    var socket = io.connect('http://localhost:8080');
+
+    socket.on('connect', function () {
+        $('#chat').addClass('connected');
+        socket.emit('authent_key', $('#l_authent_key').text());
+        socket.emit('nickname', $('#l_nick').text());
+        socket.emit('lineslog');
+
+    });
+
+    socket.on('announcement', function (msg) {
+        $('#lines').append($('<p>').append($('<em>').text(msg)));
+    });
+
+    socket.on('nicknames', function (nicknames) {
+        $('#nicknames').empty().append($('<span>Online: </span>'));
+        for (var i in nicknames) {
+          $('#nicknames').append($('<b>').text(nicknames[i]));
+        }
+    });
+
+    socket.on('msg_to_room', message);
+    socket.on('stat_room', stat_room);
+
+    socket.on('reconnect', function () {
+        $('#lines').remove();
+        message('System', 'Reconnected to the server');
+    });
+
+    socket.on('need_reconnect', function () {
+        window.location="/";
+    });    
+
+    socket.on('reconnecting', function () {
+        message('System', 'Attempting to re-connect to the server');
+    });
+
+    socket.on('error', function (e) {
+        message('System', e ? e : 'A unknown error occurred');
+    });
+
+    function message (from, msg) {
+        $('#lines').append($('<p>').append($('<b>').text(from), msg));
+    }
+
+    function stat_room (n_users, n_lines) {
+        $('#stats').replaceWith('<div id="stats"><span>NbUsers '+ n_users +' NbLines : '+n_lines +' </span></div>');
+    }
+
+
+    // DOM manipulation
+    $(function () {
+
+        $('#send-message').submit(function () {
+            message('me', $('#message').val());
+            socket.emit('user message', $('#message').val());
+            clear();
+            $('#lines').get(0).scrollTop = 10000000;
+            return false;
+        });
+
+        function clear () {
+            $('#message').val('').focus();
+        };
+    });
+        </script>
+{% endblock %}
+
+{% block content %}
+<div id="auth_key"><p>Authent Key <label id='l_authent_key'>{{authent_key}}</label></p></div>
+<p>Nick <label id='l_nick'>{{nickname}}</label></p>
+<div id="chat">
+
+    <div id="connecting">
+      <div class="wrap">Connecting to socket.io server</div>
+    </div>
+    <div id="messages">
+      <div id="nicknames"><span>Online:</span></div>
+      <div id="stats"><span>NbUsers: {{nusers}}, NbLines : {{nlines}} </span>
+      </div>
+      <div id="lines"></div>
+    </div>
+    <form id="send-message">
+      <input id="message">
+      <button>Send</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
