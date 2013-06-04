@@ -1,0 +1,134 @@
+{% extends "djsocketio/base.html" %}
+
+{% block extrahead %}
+    <link href="/static/css/style.css" rel="stylesheet">
+    <script type="text/javascript" src="/static/jquery-1.6.1.min.js"></script>
+    <script type="text/javascript" src="/static/socket.io.js"></script>
+
+<script type="text/python">
+import html
+
+def brython_onconnect():
+    JSObject(socket).emit('authent_key', doc['l_authent_key'].text)
+    JSObject(socket).emit('nickname', doc['l_nick'].text)
+    JSObject(socket).emit('lineslog')
+
+
+def brython_message(sender,msg):
+    str = sender + ' : ' + msg
+    p = html.P(str)
+    doc['lines'] <= p
+
+def brython_announcement(msg):
+    p = html.P(msg)
+    doc['lines'] <= p
+
+def brython_send_message():
+    brython_message('me',doc['message'].value)
+    JSObject(socket).emit('user message', doc['message'].value)
+    doc['lines'].scrollTop = 10000000;
+    return False
+
+def brython_reconnecting():
+    brython_message('System', 'Attempting to re-connect to the server')
+
+def brython_need_reconnect():
+    JSObject(window).location="/"
+
+def brython_reconnect():
+    doc['lines'].remove()
+    brython_message('System', 'Reconnected to the server')
+
+def brython_stats_room(n_users, n_lines):
+    d = html.DIV(Id=stats)
+    str = "nb users :" + n_users + " nb lines : " + n_lines
+    sp = html.SPAN(str)
+    d <= sp
+
+    doc['lines'].replaceWith(d)
+
+def brython_nicknames(nicknames):
+    doc['nicknames'].empty()
+    sp = html.SPAN("Online : ")
+    for nickname in nicknames:
+        b = html.B(nickname)
+        sp <= b
+    doc['nicknames'] <= sp
+
+def brython_error(e):
+    if e :
+        brython_message('System', e )
+    else :
+        brython_message('System', 'A unknown error occurred')
+</script>
+
+    <script>
+    brython(1);
+    var socket = io.connect('http://localhost:8080');
+
+    WEB_SOCKET_SWF_LOCATION = "/static/WebSocketMain.swf";
+    WEB_SOCKET_DEBUG = true;
+
+
+    socket.on('connect', function () {
+        $('#chat').addClass('connected');
+        brython_onconnect();
+    });
+
+
+    socket.on('announcement',brython_announcement) ;
+
+
+    socket.on('nicknames', brython_nicknames);
+
+
+    socket.on('msg_to_room', brython_message);
+
+
+    socket.on('stat_room', brython_stats_room);
+
+
+    socket.on('reconnect', brython_reconnect);
+
+
+    socket.on('need_reconnect', brython_need_reconnect);
+
+
+    socket.on('reconnecting', brython_reconnecting);
+
+
+    socket.on('error', brython_error );
+
+</script>
+
+
+{% endblock %}
+
+
+
+{% block content %}
+<div id="auth_key"><p>Authent Key <label id='l_authent_key'>{{authent_key}}</label></p></div>
+<p>Nick <label id='l_nick'>{{nickname}}</label></p>
+<div id="chat">
+
+    <div id="connecting">
+      <div class="wrap">Connecting to socket.io server</div>
+    </div>
+    <div id="messages">
+      <div id="nicknames"><span>Online:</span></div>
+      <div id="stats"><span>NbUsers: {{nusers}}, NbLines : {{nlines}} </span>
+      </div>
+      <div id="lines"></div>
+    </div>
+    <form id="sendmessage" onsubmit="return brython_send_message()" >
+      <input id="message" >
+      <button id='bitton'>Send</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block brython %}
+
+{% endblock %}

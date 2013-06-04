@@ -1,0 +1,26 @@
+{% extends "djsocketio/base.html" %}
+
+{% block extrahead %}
+    <link href="/static/css/style.css" rel="stylesheet">
+
+{% endblock %}
+
+{% block content %}
+  <div id="chat">
+    <div id="nickname">
+      <form id="set-nickname" class="wrap" action="/" method="post">
+
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+     <div>{{ form.nickname.errors }}</div>
+     <div>
+        <label for="id_nickname">Please type in your nickname and press enter</label>{{ form.nickname }}<input type="submit" value="Go Chat" />
+     </div>
+    
+    </form>
+    </div>
+    </div>
+
+
+{% endblock %}
